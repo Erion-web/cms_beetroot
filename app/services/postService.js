@@ -90,8 +90,9 @@ const favorite = async (userId, slug) => {
   };
 };
 
-//When fetching all posts add number of likes and favorites for post
-const getAllWithReactions = async () => {
+//When fetching all posts add number of likes and favorites for posts
+
+const getAllWithLikesAndFavorites = async () => {
   const posts = await all();
 
   const reactions = await reactionService.getAll();
@@ -99,14 +100,22 @@ const getAllWithReactions = async () => {
   const favorites = reactions.filter((reaction) => reaction.favorite);
   const likes = reactions.filter((reaction) => reaction.liked);
 
-  posts.forEach((post) => {
-    post.likes = likes.filter((like) => like.postId === post.id).length;
-    post.favorites = favorites.filter(
-      (favorite) => favorite.postId === post.id
-    ).length;
+  const postsWithLikesAndFavorites = posts.map((post) => {
+    const postReactions = reactions.filter(
+      (reaction) => reaction.postId === post.id
+    );
+
+    const postFavorites = postReactions.filter((reaction) => reaction.favorite);
+    const postLikes = postReactions.filter((reaction) => reaction.liked);
+
+    return {
+      ...post.toJSON(),
+      likes: postLikes.length,
+      favorites: postFavorites.length,
+    };
   });
 
-  return posts;
+  return postsWithLikesAndFavorites;
 };
 
 //When fetching all posts those that are private shouldn't be shown only admin can see private posts
@@ -115,9 +124,9 @@ const getAllPrivate = async (user) => {
 
   if (user.role === "admin") {
     return posts;
+  } else {
+    return posts.filter((post) => post.private === false);
   }
-
-  return posts.filter((post) => post.private === false);
 };
 
 const deletePost = async (id) => {
@@ -175,7 +184,7 @@ module.exports = {
   deletePost,
   getBySlug,
   checkIfUserIsAuth,
-  getAllWithReactions,
+  getAllWithLikesAndFavorites,
   getAllPrivate,
   isNotAllowed,
   favorite,
