@@ -1,116 +1,120 @@
-const User = require('./../models/User');
+const User = require("./../models/User");
 
-const { hashPassword, createJwt } = require('./../helpers/encrypting')
+const { hashPassword, createJwt } = require("./../helpers/encrypting");
 
 const login = async (user) => {
-	const token = await createJwt({
-		id: user.id,
-		username: user.username,
-		name: `${user.firstName} ${user.lastName}`,
-	});
+  const token = await createJwt({
+    id: user.id,
+    role: user.role,
+    username: user.username,
+    name: `${user.firstName} ${user.lastName}`,
+  });
 
-	return {
-		token
-	}
-}
+  return {
+    token,
+  };
+};
 
 const register = async (data) => {
-	const hashedPassword = await hashPassword(data.password);
+  const hashedPassword = await hashPassword(data.password);
 
-	const user = await new User({
-		firstName: data.firstName,
-		lastName: data.lastName,
-		username: data.username,
-		password: hashedPassword,
-	}).save();
+  const user = await new User({
+    role: data.role,
+    lastName: data.lastName,
+    username: data.username,
+    firstName: data.firstName,
 
-	const token = await createJwt({
-		id: user.id,
-		username: user.username,
-		name: `${user.firstName} ${user.lastName}`,
-	});
+    password: hashedPassword,
+  }).save();
 
-	return {
-		user,
-		token
-	};
-}
+  const token = await createJwt({
+    id: user.id,
+    role: user.role,
+    username: user.username,
+    name: `${user.firstName} ${user.lastName}`,
+  });
+
+  return {
+    user,
+    token,
+  };
+};
 
 const changePassword = async (id, data) => {
-	const hashedPassword = await hashPassword(data.password);
-	const user = await User.findOneAndUpdate(
-		{ id },
-		{
-			$set: {
-				password: hashedPassword,
-			},
-		}
-	);
+  const hashedPassword = await hashPassword(data.password);
+  const user = await User.findOneAndUpdate(
+    { id },
+    {
+      $set: {
+        password: hashedPassword,
+      },
+    }
+  );
 
-	return {
-		user: {
-			id: user.id,
-			username: user.username,
-			firstName: user.firstName,
-			lastName: user.lastName,
-			role: user.role,
-		},
-	};
+  return {
+    user: {
+      id: user.id,
+      username: user.username,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+    },
+  };
 };
 
 const checkUsername = async (username) => {
-	return await User.findOne({username});
-}
+  return await User.findOne({ username });
+};
 
 const getUser = async (id, returnWithPassword = false) => {
-	const user =  await User.findById(id)
+  const user = await User.findById(id);
 
-	if(returnWithPassword){
-		return { 
-			user
-		}
-	}
+  if (returnWithPassword) {
+    return {
+      user,
+    };
+  }
 
-	return {
-		user: {
-			id : user.id,
-			username : user.username,
-			firstName : user.firstName,
-			lastName : user.lastName,
-			role : user.role,
-		}
-	}
-}
+  return {
+    user: {
+      id: user.id,
+      username: user.username,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+    },
+  };
+};
 
 const profile = async (id, data) => {
-	const user =  await User.findOneAndUpdate(
-		{id},
-		{
-			$set:{
-				firstName: data.firstName,
-				lastName: data.lastName,
-				username: data.username,
-			}
-		},
-		{ new : true}
-	)
+  const user = await User.findOneAndUpdate(
+    { id },
+    {
+      $set: {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        username: data.username,
+      },
+    },
+    { new: true }
+  );
 
-	return {
-		user: {
-			id : user.id,
-			username : user.username,
-			firstName : user.firstName,
-			lastName : user.lastName,
-			role : user.role,
-		}
-	}
-}
+  return {
+    user: {
+      id: user.id,
+      username: user.username,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+    },
+  };
+};
 
 module.exports = {
-	login,
-	register,
-	checkUsername,
-	getUser,
-	profile,
-	changePassword,
+  login,
+  register,
+  checkUsername,
+  getUser,
+  profile,
+  changePassword,
 };

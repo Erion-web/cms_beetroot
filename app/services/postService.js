@@ -5,8 +5,64 @@ const reactionService = require("./../services/reactionService");
 const commentService = require("./../services/commentService");
 const Post = require("./../models/Post");
 
-const all = async () => {
-  return await Post.find().populate("author").populate("category");
+const all = async (userRole) => {
+  const post = await Post.find().populate("author").populate("category");
+
+  let isSpecial;
+  if (userRole === "admin") {
+    console.log(userRole);
+    isSpecial = true;
+  } else {
+    isSpecial = false;
+  }
+  const posts = await Post.aggregate([
+    { $match: { $or: [{ private: false }, { private: isSpecial }] } },
+
+    {
+      $lookup: {
+        from: "reactions",
+        let: { post: "$_id" },
+        pipeline: [
+          {
+            $match: {
+              $and: [
+                { $expr: { $eq: ["$$post", "$post"] } },
+                { $expr: { $eq: [1, "$liked"] } },
+              ],
+            },
+          },
+        ],
+        as: "likes",
+      },
+    },
+
+    {
+      $lookup: {
+        from: "reactions",
+        let: { post: "$_id" },
+        pipeline: [
+          {
+            $match: {
+              $and: [
+                { $expr: { $eq: ["$$post", "$post"] } },
+                { $expr: { $eq: [1, "$favorite"] } },
+              ],
+            },
+          },
+        ],
+        as: "favorites",
+      },
+    },
+
+    {
+      $addFields: {
+        likes: { $size: "$likes" },
+        favorites: { $size: "$favorites" },
+      },
+    },
+  ]);
+
+  return posts;
 };
 
 const create = async (userId, data) => {
@@ -91,7 +147,6 @@ const favorite = async (userId, slug) => {
 };
 
 //When fetching all posts add number of likes and favorites for posts
-
 const getAllWithLikesAndFavorites = async () => {
   const posts = await all();
 

@@ -1,86 +1,85 @@
-const Category = require('./../models/Category');
+const Category = require("./../models/Category");
 
 const all = async () => {
-	return await Category.find();
-}
+  return await Category.find();
+};
 
 const create = async (data) => {
+  const checkSlugResults = await searchBySlug(data.slug);
 
-	const checkSlugResults = await searchBySlug(data.slug);
+  const category = await new Category({
+    title: data.title,
+    slug: checkSlugResults > 0 ? `${data.slug}-${checkSlugResults}` : data.slug,
+  }).save();
 
-	const category = await new Category({
-		title: data.title,
-		slug: checkSlugResults > 0 ? `${data.slug}-${(checkSlugResults)}` : data.slug,
-	}).save();
-
-	return {
-		category,
-	};
-}
+  return {
+    category,
+  };
+};
 
 const update = async (id, data) => {
-	const category = await Category.findOneAndUpdate(
-		{ _id: id },
-		{
-			$set: {
-				title: data.title,
-				slug: data.slug,
-			},
-		},
-		{ new: true }
-	);
+  const category = await Category.findOneAndUpdate(
+    { _id: id },
+    {
+      $set: {
+        title: data.title,
+        slug: data.slug,
+      },
+    },
+    { new: true }
+  );
 
-	return {
-		category,
-	};
-}
+  return {
+    category,
+  };
+};
 
 const deleteCategory = async (id) => {
-	const category = await Category.findById(id);
+  const category = await Category.findById(id);
 
-	if(!category){
-		throw new Error('Category not found!');
-	}
+  if (!category) {
+    throw new Error("Category not found!");
+  }
 
-	await Category.deleteOne({_id : id});
+  await Category.deleteOne({ _id: id });
 
-	return {
-		category,
-	};
-}
+  return {
+    category,
+  };
+};
 
 const getCategoryOrFail = async (id) => {
-	const category = await Category.findById(id);
+  const category = await Category.findById(id);
 
-	if(!category){
-		throw new Error('Category not found!');
-	}
+  if (!category) {
+    throw new Error("Category not found!");
+  }
 
-	return category;
-}
+  return category;
+};
 
-const searchBySlug = async (slug) => { 
-	const searchInput = new RegExp(slug, "i");
-	const searchedResults = await Category.find({
-		slug: {
-			$regex: searchInput,
-		},
-	});
+const searchBySlug = async (slug) => {
+  const searchInput = new RegExp(slug, "i");
+  const searchedResults = await Category.find({
+    slug: {
+      $regex: searchInput,
+    },
+  });
 
-	return  searchedResults.length
-}
+  return searchedResults.length;
+};
 
 const getBySlug = async (slug) => {
-	return await Category.findOne({
-		slug,
-	});
+  return await Category.findOne({
+    slug,
+  });
 };
 
 module.exports = {
-	all,
-	create,
-	update,
-	deleteCategory,
-	getBySlug,
-	getCategoryOrFail,
+  all,
+  create,
+  update,
+  deleteCategory,
+  getBySlug,
+  getCategoryOrFail,
 };
